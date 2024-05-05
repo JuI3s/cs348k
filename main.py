@@ -1,5 +1,7 @@
 from enum import auto, Flag
 
+import admm_denoiser
+
 import cv2
 import matplotlib.pyplot as plt
 import numpy as np
@@ -8,6 +10,7 @@ import numpy as np
 class NoiseType(Flag):
     Gaussian = auto()
     Uniform = auto()
+    Impulse = auto()
 
 
 test_img_path = "./test_image.png"
@@ -37,6 +40,10 @@ def add_noise(img, type: NoiseType):
         noise = np.zeros(img.shape, dtype=np.uint8)
         cv2.randn(noise, 128, 200)
         noise = (noise * 0.5).astype(np.uint8)
+    elif type == NoiseType.Impulse:
+        noise = np.zeros(img.shape, dtype=np.uint8)
+        cv2.randu(noise, 0, 255)
+        noise = cv2.threshold(noise, 245, 255, cv2.THRESH_BINARY)[1]
 
     gn_img = cv2.add(img, noise)
     return gn_img, noise
@@ -62,10 +69,17 @@ def plot(img, gauss_noise, gn_img):
     plt.show()
 
 
+def denois_total_variation():
+    pass
+
+
 # img = cv2.imread("/kaggle/input/test-image-for-noise/image.jpg", 0)
 
 if __name__ == "__main__":
     verbose = True
     img = load_grayscale_img(test_img_path)
-    gn_img, gauss_noise = add_noise(img, type=NoiseType.Gaussian)
-    plot(img, gn_img, gauss_noise)
+    # gn_img, gauss_noise = add_noise(img, type=NoiseType.Gaussian)
+    noise_img, noise = add_noise(img, type=NoiseType.Impulse)
+    # plot(img, noise_img, noise)
+
+    denoiser = admm_denoiser.ADMMDenoiserTV(img=img, verbose=True)
